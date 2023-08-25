@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+    <title>إدارة المستخدمين</title>
+</head>
+<body>
+    <h1>إدارة المستخدمين</h1>
+    
+    <!-- عرض المستخدمين -->
+    <h2>المستخدمين الموجودون:</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>المعرّف</th>
+                <th>اسم الجدول</th>
+                <th>رقم الهاتف</th>
+                <th>تاريخ التسجيل</th>
+                <th>تاريخ آخر دخول</th>
+                <th>وقت آخر دخول</th>
+                <th>حذف</th>
+            </tr>
+        </thead>
+        <tbody id="users-table-body">
+        </tbody>
+    </table>
+    
+    <!-- إنشاء مستخدم جديد -->
+    <h2>إنشاء مستخدم جديد:</h2>
+    <form id="create-user-form">
+        <label for="table-name-input">اسم الجدول:</label>
+        <input type="text" id="table-name-input" name="tableName"><br>
+        <label for="phone-number-input">رقم الهاتف:</label>
+        <input type="text" id="phone-number-input" name="numPhone"><br>
+        <label for="password-input">كلمة المرور:</label>
+        <input type="password" id="password-input" name="password"><br>
+        <button type="submit">إنشاء</button>
+    </form>
+    
+    <!-- حذف مستخدم -->
+    <h2>حذف مستخدم:</h2>
+    <form id="delete-user-form">
+        <label for="user-id-input">معرّف المستخدم:</label>
+        <input type="text" id="user-id-input" name="userId"><br>
+        <button type="submit">حذف</button>
+    </form>
+    
+    <script>
+        // عرض المستخدمين
+        function showUsers() {
+            fetch('fetchusers.php')
+                .then(response => response.json())
+                .then(data => {
+                    if(data.error === "200") {
+                        let users = data.users;
+                        let tbody = document.getElementById('users-table-body');
+                        tbody.innerHTML = '';
+                        for(let i=0; i<users.length; i++) {
+                            let row = tbody.insertRow(-1);
+                            row.insertCell(0).textContent = users[i].id;
+                            row.insertCell(1).textContent = users[i].Table_Name;
+                            row.insertCell(2).textContent = users[i].NumPhone;
+                            row.insertCell(3).textContent = users[i].Date_registration;
+                            row.insertCell(4).textContent = users[i].Date_login;
+                            row.insertCell(5).textContent = users[i].time_login;
+                            let deleteButton = document.createElement('button');
+                            deleteButton.textContent = 'حذف';
+                            deleteButton.addEventListener('click', function() {
+                                let userId = users[i].id;
+                                deleteUser(userId);
+                            });
+                            row.insertCell(6).appendChild(deleteButton);
+                        }
+                    }
+                });
+        }
+        
+        // إنشاء مستخدم جديد
+        function createUser(tableName, numPhone, password) {
+            fetch('reg.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                    tableName: tableName,
+                    numPhone: numPhone,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.error === "200") {
+                    alert('تم إنشاء المستخدم بنجاح!');
+                    document.getElementById('create-user-form').reset();
+                    showUsers();
+                } else {
+                    alert('حدث خطأ أثناء إنشاء المستخدم!');
+                }
+            });
+        }
+        
+        // حذف مستخدم
+        function deleteUser(userId) {
+            fetch('deleteaccount.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                    userId: userId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.error === "200") {
+                    alert('تم حذف المستخدم بنجاح!');
+                    showUsers();
+                } else {
+                    alert('حدث خطأ أثناء حذف المستخدم!');
+                }
+            });
+        }
+        
+        // تنفيذ الأوامر عند تقديم نموذج إنشاء مستخدم جديد
+        document.getElementById('create-user-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            let tableName = document.getElementById('table-name-input').value;
+            let numPhone = document.getElementById('phone-number-input').value;
+            let password = document.getElementById('password-input').value;
+            createUser(tableName, numPhone, password);
+        });
+        
+        // تنفيذ الأوامر عند تقديم نموذج حذف مستخدم
+        document.getElementById('delete-user-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            let userId = document.getElementById('user-id-input').value;
+            deleteUser(userId);
+        });
+        
+        // عرض المستخدمين عند تحميل الصفحة
+        showUsers();
+    </script>
+</body>
+</html>
